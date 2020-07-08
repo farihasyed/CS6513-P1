@@ -14,67 +14,26 @@
       <h1>Enter your city and state for a list of upcoming concerts.</h1>
       <p/>
       <form name="location" id="location" action="/location" method="POST">
+          {{ form.csrf_token }}
+
           {{ form.city.label }} {{ form.city }}
           {% if form.city.errors %}
             {% for error in form.city.errors %}
                 {{ error }}
             {% endfor %}
           {% endif %}
-        <select name="state" id="state">
-            <option value="" selected="selected" required="required">Select a State</option>
-            <option value="AL">AL</option>
-            <option value="AK">AK</option>
-            <option value="AR">AR</option>	
-            <option value="AZ">AZ</option>
-            <option value="CA">CA</option>
-            <option value="CO">CO</option>
-            <option value="CT">CT</option>
-            <option value="DC">DC</option>
-            <option value="DE">DE</option>
-            <option value="FL">FL</option>
-            <option value="GA">GA</option>
-            <option value="HI">HI</option>
-            <option value="IA">IA</option>	
-            <option value="ID">ID</option>
-            <option value="IL">IL</option>
-            <option value="IN">IN</option>
-            <option value="KS">KS</option>
-            <option value="KY">KY</option>
-            <option value="LA">LA</option>
-            <option value="MA">MA</option>
-            <option value="MD">MD</option>
-            <option value="ME">ME</option>
-            <option value="MI">MI</option>
-            <option value="MN">MN</option>
-            <option value="MO">MO</option>	
-            <option value="MS">MS</option>
-            <option value="MT">MT</option>
-            <option value="NC">NC</option>	
-            <option value="NE">NE</option>
-            <option value="NH">NH</option>
-            <option value="NJ">NJ</option>
-            <option value="NM">NM</option>			
-            <option value="NV">NV</option>
-            <option value="NY">NY</option>
-            <option value="ND">ND</option>
-            <option value="OH">OH</option>
-            <option value="OK">OK</option>
-            <option value="OR">OR</option>
-            <option value="PA">PA</option>
-            <option value="RI">RI</option>
-            <option value="SC">SC</option>
-            <option value="SD">SD</option>
-            <option value="TN">TN</option>
-            <option value="TX">TX</option>
-            <option value="UT">UT</option>
-            <option value="VT">VT</option>
-            <option value="VA">VA</option>
-            <option value="WA">WA</option>
-            <option value="WI">WI</option>	
-            <option value="WV">WV</option>
-            <option value="WY">WY</option>
-        </select>
-        {{ form.submit }}
+          {{ form.state }}
+          {% if form.state.errors %}
+                {% for error in form.state.errors %}
+                    {{ error }}
+                {% endfor %}
+          {% endif %}
+          <br><br>
+          <h3> Additional Search Criteria (Optional)</h3>
+          {{ form.genre.label }} {{ form.genre }} <p/>
+          Events After {{ form.events_after.day }} {{ form.events_after.month }} {{ form.events_after.year }} <p/>
+          Events Before {{ form.events_before.day }} {{ form.events_before.month }} {{ form.events_before.year }}
+          <p/>{{ form.submit }}
     </form>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->

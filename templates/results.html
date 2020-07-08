@@ -11,9 +11,13 @@
         <title>Results</title>
     </head>
     <body>
+        {{ form.csrf_token }}
         {% if city, state %}
             <h1>{{ city }}, {{ state }}</h1>
         {% endif %}
+        <p/>
+        <form name="results" id="results" action="/location" method="GET">
+            {{ form.back }}
         <p>Due to COVID-19, please ensure that the event you wish to attend has not been cancelled.</p> 
         <p>In addition, please keep your and others' safety in mind; adhere to all social distancing protocols as laid out by local officials.</p>
         <p/>
