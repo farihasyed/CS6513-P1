@@ -1,28 +1,16 @@
-import pyodbc
 from elements import Event, MeetupGroup
 from tables import MeetupTable
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date
-import os
 import requests
 from geopy.distance import distance
 import numpy as np
-from flask import request
+from multiprocessing import Pool
+from Scraper.database import connect_database, close_database
 
 DEFAULT_AFTER_DATE = date.today().strftime("%Y-%m-%d")
 DEFAULT_BEFORE_DATE = "2022-12-31"
 BEARINGS = [0, 90, 180, 270]
-
-
-def connect_database():
-    connection_string = os.environ["SQLAZURECONNSTR_python"]
-    connection = pyodbc.connect(connection_string)
-    cursor = connection.cursor()
-    return connection, cursor
-
-
-def execute_command(cursor, command):
-    cursor.execute(command)
+connection, cursor = connect_database()
 
 
 def event_date(date, separator, default):
@@ -74,20 +62,15 @@ def get_events_command_construction(genre, events_after, events_before, radius, 
 
 def get_events(city, state, genre, events_after, events_before, radius, location):
     command, after_date, before_date = get_events_command_construction(genre, events_after, events_before, radius, location)
-    connection, cursor = connect_database()
     cursor.execute(command, city, state, after_date, before_date)
     rows = cursor.fetchall()
-    executor = ThreadPoolExecutor(max_workers=5)
-    futures = executor.map(process_event, rows)
-    events = []
-    for event in futures:
-        events.append(event)
-    connection.close()
+    with Pool(10) as p:
+        events = p.map(process_event, rows)
+    close_database(connection)
     return events
 
 
 def process_event(row):
-    connection, cursor = connect_database()
     venue_map = "https://maps.google.com/?q="
     zoom = "&z=8"
     event_date = row.event_date.date()
@@ -100,9 +83,8 @@ def process_event(row):
     venue_url = venue_map + str(latitude) + "," + str(longitude) + zoom
     city = row.city
     state = row.state
-    meetup_groups = get_groups(city, state, artist, genre, venue, cursor)
+    meetup_groups = get_groups(city, state, artist, genre, venue)
     event = Event(event_date, artist, artist_url, venue, venue_url, genre, meetup_groups)
-    connection.close()
     return event
 
 
@@ -148,7 +130,7 @@ def process_group(row):
     return group
 
 
-def get_groups(city, state, artist, genre, venue, cursor):
+def get_groups(city, state, artist, genre, venue):
     command, artist, genre, venue = get_groups_command_construction(artist, genre, venue)
     cursor.execute(command, city, state, artist, genre, venue)
     rows = cursor.fetchall()
@@ -156,11 +138,8 @@ def get_groups(city, state, artist, genre, venue, cursor):
         command = default_get_groups_command_construction()
         rows = cursor.fetchall()
         cursor.execute(command, city, state)
-    groups = []
-    executor = ThreadPoolExecutor(max_workers=5)
-    futures = executor.map(process_group, rows)
-    for group in futures:
-        groups.append(group)
+    with Pool(5) as p:
+        groups = p.map(process_group, rows)
     return MeetupTable(groups)
 
 
@@ -171,4 +150,5 @@ def get_coordinates():
     latitude = result["lat"]
     longitude = result["lon"]
     return latitude, longitude
+
 
