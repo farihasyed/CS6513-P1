@@ -8,9 +8,11 @@ def connect_database():
     cursor = connection.cursor()
     return connection, cursor
 
-execute_database(self, command):
-        self.cursor.execute(command)
 
-def close_database(self):
-        self.connection.commit()
-        self.connection.close()
+def execute_command(cursor, command):
+    cursor.execute(command)
+
+
+def close_database(connection):
+    connection.commit()
+    connection.close()
