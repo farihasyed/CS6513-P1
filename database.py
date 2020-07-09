@@ -15,8 +15,7 @@ BEARINGS = [0, 90, 180, 270]
 
 
 def connect_database():
-    # connection_string = os.environ["SQLAZURECONNSTR_python"]
-    connection_string = ***REMOVED***
+    connection_string = os.environ["SQLAZURECONNSTR_python"]
     connection = pyodbc.connect(connection_string)
     cursor = connection.cursor()
     return connection, cursor
