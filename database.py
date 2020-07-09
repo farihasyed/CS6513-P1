@@ -4,13 +4,19 @@ from tables import MeetupTable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 import os
-
+import requests
+from geopy.distance import distance
+import numpy as np
+from flask import request
 
 DEFAULT_AFTER_DATE = date.today().strftime("%Y-%m-%d")
 DEFAULT_BEFORE_DATE = "2022-12-31"
+BEARINGS = [0, 90, 180, 270]
+
 
 def connect_database():
-    connection_string = os.environ["SQLAZURECONNSTR_python"]
+    # connection_string = os.environ["SQLAZURECONNSTR_python"]
+    connection_string = ***REMOVED***
     connection = pyodbc.connect(connection_string)
     cursor = connection.cursor()
     return connection, cursor
@@ -35,7 +41,20 @@ def event_genre(genre):
     return ""
 
 
-def get_events_command_construction(genre, events_after, events_before):
+def event_distance(radius, location):
+    if radius > 0:
+        ranges = [distance(miles=radius).destination(location, b) for b in BEARINGS]
+        latitude_range = np.array([i[0] for i in ranges])
+        longitude_range = np.array([i[1] for i in ranges])
+        min_latitude, max_latitude = np.min(latitude_range), np.max(latitude_range)
+        min_longitude, max_longitude = np.min(longitude_range), np.max(longitude_range)
+        distance_string = " AND B.latitude BETWEEN " + str(min_latitude) + " AND " + str(max_latitude) + \
+                          " AND B.longitude BETWEEN " + str(min_longitude) + " AND " + str(max_longitude)
+        return distance_string
+    return ""
+
+
+def get_events_command_construction(genre, events_after, events_before, radius, location):
     command = """SELECT DISTINCT B.event_name, B.event_date, B.venue_name, B.city, B.state, B.genre_name, B.url,
                             B.latitude, B.longitude, A.attraction_name 
                             FROM ticketmaster_attractions AS A
@@ -47,14 +66,15 @@ def get_events_command_construction(genre, events_after, events_before):
     separator = '-'
     after_date = event_date(events_after, separator, DEFAULT_AFTER_DATE)
     before_date = event_date(events_before, separator, DEFAULT_BEFORE_DATE)
+    distance_string = event_distance(radius, location)
     order = " ORDER BY B.event_date"
     genre_string = event_genre(genre)
-    command = command + genre_string + order
+    command = command + genre_string + distance_string + order
     return command, after_date, before_date
 
 
-def get_events(city, state, genre, events_after, events_before):
-    command, after_date, before_date = get_events_command_construction(genre, events_after, events_before)
+def get_events(city, state, genre, events_after, events_before, radius, location):
+    command, after_date, before_date = get_events_command_construction(genre, events_after, events_before, radius, location)
     connection, cursor = connect_database()
     cursor.execute(command, city, state, after_date, before_date)
     rows = cursor.fetchall()
@@ -143,3 +163,13 @@ def get_groups(city, state, artist, genre, venue, cursor):
     for group in futures:
         groups.append(group)
     return MeetupTable(groups)
+
+
+def get_coordinates():
+    ip_address = requests.get('https://api.ipify.org').text
+    response = requests.get("http://ip-api.com/json/{}".format(ip_address))
+    result = response.json()
+    latitude = result["lat"]
+    longitude = result["lon"]
+    return latitude, longitude
+
