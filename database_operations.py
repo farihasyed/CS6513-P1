@@ -64,7 +64,7 @@ def get_events(city, state, genre, events_after, events_before, radius, location
     command, after_date, before_date = get_events_command_construction(genre, events_after, events_before, radius, location)
     cursor.execute(command, city, state, after_date, before_date)
     rows = cursor.fetchall()
-    events = [process_group(row) for row in rows]
+    events = [process_event(row) for row in rows]
     close_database(connection)
     return events
 
