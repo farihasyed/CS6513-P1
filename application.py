@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect
 from tables import EventsTable
-from database import get_events, get_coordinates
+from database_operations import get_events, get_coordinates
 from forms import Location, Results
 import bleach
 
@@ -24,8 +24,8 @@ def start():
 @app.route('/location', methods=['GET', 'POST'])
 def location():
     form = Location()
-    latitude, longitude = get_coordinates()
     if request.method == 'POST':
+        latitude, longitude = get_coordinates()
         city = bleach.clean(form.city.data)
         state = form.state.data
         genre = form.genre.data

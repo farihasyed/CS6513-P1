@@ -10,7 +10,6 @@ from Scraper.database import connect_database, close_database
 DEFAULT_AFTER_DATE = date.today().strftime("%Y-%m-%d")
 DEFAULT_BEFORE_DATE = "2022-12-31"
 BEARINGS = [0, 90, 180, 270]
-connection, cursor = connect_database()
 
 
 def event_date(date, separator, default):
@@ -61,12 +60,15 @@ def get_events_command_construction(genre, events_after, events_before, radius, 
 
 
 def get_events(city, state, genre, events_after, events_before, radius, location):
+    connection, cursor = connect_database()
     command, after_date, before_date = get_events_command_construction(genre, events_after, events_before, radius, location)
     cursor.execute(command, city, state, after_date, before_date)
     rows = cursor.fetchall()
-    with Pool(10) as p:
-        events = p.map(process_event, rows)
     close_database(connection)
+    with Pool(10) as p:
+        connection, cursor = connect_database()
+        events = p.map(process_event, rows)
+        close_database(connection)
     return events
 
 
@@ -131,6 +133,7 @@ def process_group(row):
 
 
 def get_groups(city, state, artist, genre, venue):
+    connection, cursor = connect_database()
     command, artist, genre, venue = get_groups_command_construction(artist, genre, venue)
     cursor.execute(command, city, state, artist, genre, venue)
     rows = cursor.fetchall()
@@ -138,8 +141,7 @@ def get_groups(city, state, artist, genre, venue):
         command = default_get_groups_command_construction()
         rows = cursor.fetchall()
         cursor.execute(command, city, state)
-    with Pool(5) as p:
-        groups = p.map(process_group, rows)
+    groups = [process_group(row) for row in rows]
     return MeetupTable(groups)
 
 
@@ -150,5 +152,4 @@ def get_coordinates():
     latitude = result["lat"]
     longitude = result["lon"]
     return latitude, longitude
-
 
