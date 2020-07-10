@@ -9,10 +9,6 @@ def connect_database():
     return connection, cursor
 
 
-def execute_command(cursor, command):
-    cursor.execute(command)
-
-
 def close_database(connection):
     connection.commit()
     connection.close()
