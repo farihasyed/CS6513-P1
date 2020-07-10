@@ -142,6 +142,7 @@ def get_groups(city, state, artist, genre, venue):
         rows = cursor.fetchall()
         cursor.execute(command, city, state)
     groups = [process_group(row) for row in rows]
+    close_database(connection)
     return MeetupTable(groups)
 
 
