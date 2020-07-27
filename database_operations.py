@@ -4,7 +4,7 @@ from datetime import date
 import requests
 from geopy.distance import distance
 import numpy as np
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 from Scraper.database import connect_database, close_database
 
 DEFAULT_AFTER_DATE = date.today().strftime("%Y-%m-%d")
@@ -65,10 +65,10 @@ def get_events(city, state, genre, events_after, events_before, radius, location
     cursor.execute(command, city, state, after_date, before_date)
     rows = cursor.fetchall()
     close_database(connection)
-    with Pool(5) as p:
-        connection, cursor = connect_database()
-        events = p.map(process_event, rows)
-        close_database(connection)
+    connection, cursor = connect_database()
+    executor = ThreadPoolExecutor(max_workers=10)
+    events = executor.map(process_event, rows)
+    close_database(connection)
     return events
 
 
